@@ -1,0 +1,35 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.generatefolderplaylist"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="9"
+        android:targetSdkVersion="17" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <application
+        android:icon="@drawable/music_ico"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity android:name=".MainStartActivity"
+            android:label="@string/servicelabel"
+             >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name="com.example.generatefolderplaylist.GeneratePlaylistService"
+            android:icon="@drawable/ic_launcher"
+            android:label="@string/servicelabel" >
+            
+        </service>
+        <receiver android:name="GeneratePlaylistService$SDCardPluggedInReceiver"></receiver>
+        
+    </application>
+
+</manifest>
