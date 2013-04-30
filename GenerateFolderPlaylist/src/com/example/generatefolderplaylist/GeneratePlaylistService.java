@@ -1,10 +1,8 @@
 package com.example.generatefolderplaylist;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -19,7 +17,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
@@ -34,8 +31,8 @@ public class GeneratePlaylistService extends Service {
 	
 	final static long MINUMUM_LENGTH = 1024 * 1024;
 	//Root path, which will be searched
-	static String pathToMedia =null;
-	final String PLAYLISTPATH = Environment.getExternalStorageDirectory().getAbsolutePath()+"Playlists/";
+	private String pathToMedia = null;
+	final static String PLAYLISTPATH = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Playlists/";
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -104,7 +101,6 @@ public class GeneratePlaylistService extends Service {
 				if(out != null)
 				out.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
@@ -164,7 +160,9 @@ public class GeneratePlaylistService extends Service {
 							}else{
 								pth = new ArrayList<String>();
 								pth.add(f.getPath());
-								pathToMedia = new String(f.getParentFile().getPath());
+								if(pathToMedia == null){
+									pathToMedia = new String(f.getParentFile().getAbsolutePath()+"/");
+								}
 							}
 							paths.put(f.getParentFile().getPath(),pth);
 						}
@@ -202,7 +200,7 @@ public class GeneratePlaylistService extends Service {
 
 	@Override
 	public void onStart(Intent intent, int startId) {
-		new SearchTreeJob().execute(Environment.getExternalStorageDirectory().getPath());
+		new SearchTreeJob().execute(Environment.getExternalStorageDirectory().getAbsolutePath());
 		super.onStart(intent, startId);
 	}
 
