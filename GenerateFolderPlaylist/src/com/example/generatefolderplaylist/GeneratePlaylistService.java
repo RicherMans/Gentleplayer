@@ -25,71 +25,49 @@ import android.widget.Toast;
 
 public class GeneratePlaylistService extends Service {
 
-	private BroadcastReceiver sdcardReceiver;
-	private static boolean runs = false;
-	
-	
 	final static long MINUMUM_LENGTH = 1024 * 1024;
-	//Root path, which will be searched
+	private static Object sync = new Object();
+	// Root path, which will be searched
 	private String pathToMedia = null;
-	final static String PLAYLISTPATH = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Playlists/";
+	final static String PLAYLISTPATH = Environment
+			.getExternalStorageDirectory().getAbsolutePath() + "/Playlists/";
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		if (!runs) {
-			Toast.makeText(this, "Service started", Toast.LENGTH_SHORT).show();
-		}
-		runs = true;
 		return super.onStartCommand(intent, flags, startId);
 	}
 
 	@Override
 	public void onCreate() {
-		if (sdcardReceiver == null) {
-			sdcardReceiver = new SDCardPluggedInReceiver();
-			registerReceiver(sdcardReceiver, getIntentFilter());
-		}
 		super.onCreate();
-	}
-
-	private class SDCardPluggedInReceiver extends BroadcastReceiver {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			Log.d("Media", intent.getAction());
-			Uri filep = (intent.getData());
-			if(pathToMedia == null)
-				new SearchTreeJob().execute(filep.getEncodedPath());
-			else
-				new SearchTreeJob().execute(pathToMedia);
-			
-		}
-
 	}
 
 	private void writeFile(String folderPath, List<String> list) {
 		String tmp[] = folderPath.split("/");
-		if(tmp != null){
-			String playlistName = tmp[tmp.length-1];
+		if (tmp != null) {
+			String playlistName = tmp[tmp.length - 1];
 			File playlistPa = new File(PLAYLISTPATH);
-			if(!playlistPa.exists()){
+			if (!playlistPa.exists()) {
 				playlistPa.mkdir();
 			}
-			File f = new File(PLAYLISTPATH+playlistName+".m3u");
+			File f = new File(PLAYLISTPATH + playlistName + ".m3u");
 			BufferedWriter out = null;
 			try {
+				if(f.exists()){
+					f.delete();
+				}
 				f.createNewFile();
 				out = new BufferedWriter(new FileWriter(f));
-				for(String song: list){
+				for (String song : list) {
 					out.write(song + "\n");
 				}
-				
+
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			}finally{
-				if(out != null)
+			} finally {
+				if (out != null)
 					try {
 						out.close();
 					} catch (IOException e) {
@@ -98,40 +76,41 @@ public class GeneratePlaylistService extends Service {
 					}
 			}
 			try {
-				if(out != null)
-				out.close();
+				if (out != null)
+					out.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-			
+
 		}
+	}
+	private void stop(){
+		this.stopSelf();
 	}
 
 	private class SearchTreeJob extends
-			AsyncTask<String, List<String>, HashMap<String,List<String>>> {
-
+			AsyncTask<String, List<String>, HashMap<String, List<String>>> {
 
 		@Override
 		protected void onPostExecute(HashMap<String, List<String>> result) {
 			super.onPostExecute(result);
-			if(result != null){
-				for(String key:result.keySet()){
+			if (result != null) {
+				for (String key : result.keySet()) {
 					Log.d("Key V", key + result.get(key));
-					writeFile(key,result.get(key));
+					writeFile(key, result.get(key));
 				}
+				stop();
 			}
 		}
 
-
 		@Override
-		protected HashMap<String,List<String>> doInBackground(String... params) {
+		protected HashMap<String, List<String>> doInBackground(String... params) {
 			if (params.length > 1) {
 				return null;
 			}
 			File root = new File(params[0]);
 			if (root != null) {
-				HashMap<String,List<String>> pathstomp = new HashMap<String, List<String>>();
+				HashMap<String, List<String>> pathstomp = new HashMap<String, List<String>>();
 				try {
 					pathstomp = searchNodesRec(root, pathstomp);
 					return pathstomp;
@@ -142,7 +121,8 @@ public class GeneratePlaylistService extends Service {
 			return null;
 		}
 
-		private HashMap<String,List<String>> searchNodesRec(File dir, HashMap<String,List<String>> paths)
+		private HashMap<String, List<String>> searchNodesRec(File dir,
+				HashMap<String, List<String>> paths)
 				throws MalformedURLException {
 			if (dir == null) {
 				return paths;
@@ -152,19 +132,20 @@ public class GeneratePlaylistService extends Service {
 					String type = getMimeType(f.toURI().toString().trim());
 					if (type != null && type.startsWith("audio")) {
 						Log.d("Media ", f.toURL().toString());
-						if(f.length()>MINUMUM_LENGTH){
+						if (f.length() > MINUMUM_LENGTH) {
 							List<String> pth = null;
-							if(paths.containsKey(f.getParentFile().getPath())){
+							if (paths.containsKey(f.getParentFile().getPath())) {
 								pth = paths.get(f.getParentFile().getPath());
 								pth.add(f.getPath());
-							}else{
+							} else {
 								pth = new ArrayList<String>();
 								pth.add(f.getPath());
-								if(pathToMedia == null){
-									pathToMedia = new String(f.getParentFile().getAbsolutePath()+"/");
+								if (pathToMedia == null) {
+									pathToMedia = new String(f.getParentFile()
+											.getAbsolutePath() + "/");
 								}
 							}
-							paths.put(f.getParentFile().getPath(),pth);
+							paths.put(f.getParentFile().getPath(), pth);
 						}
 					}
 				}
@@ -190,17 +171,12 @@ public class GeneratePlaylistService extends Service {
 
 	}
 
-	private IntentFilter getIntentFilter() {
-		IntentFilter filter = new IntentFilter();
-		filter.addAction(Intent.ACTION_MEDIA_SCANNER_FINISHED);
-		filter.addAction(Intent.ACTION_BOOT_COMPLETED);
-		filter.addDataScheme("file");
-		return filter;
-	}
-
 	@Override
-	public void onStart(Intent intent, int startId) {
-		new SearchTreeJob().execute(Environment.getExternalStorageDirectory().getAbsolutePath());
+	public synchronized void onStart(Intent intent, int startId) {
+		synchronized (sync) {
+			new SearchTreeJob().execute(Environment
+					.getExternalStorageDirectory().getAbsolutePath());
+		} 
 		super.onStart(intent, startId);
 	}
 

@@ -28,7 +28,14 @@
             android:label="@string/servicelabel" >
             
         </service>
-        <receiver android:name="GeneratePlaylistService$SDCardPluggedInReceiver"></receiver>
+        <receiver android:name="SDCardPluggedInReceiver">
+            <intent-filter >
+                <action android:name="android.intent.action.MEDIA_SCANNER_FINISHED"/>
+                <data android:scheme="file"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+            
+        </receiver>
         
     </application>
 
