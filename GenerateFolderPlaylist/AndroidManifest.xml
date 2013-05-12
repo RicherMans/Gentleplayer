@@ -7,7 +7,6 @@
         android:minSdkVersion="9"
         android:targetSdkVersion="17" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:icon="@drawable/music_ico"
@@ -30,9 +29,8 @@
         </service>
         <receiver android:name="SDCardPluggedInReceiver">
             <intent-filter >
-                <action android:name="android.intent.action.MEDIA_SCANNER_FINISHED"/>
+                <action android:name="android.intent.action.MEDIA_SCANNER_STARTED"/>
                 <data android:scheme="file"/>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
             
         </receiver>

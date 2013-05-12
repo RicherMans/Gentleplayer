@@ -138,7 +138,7 @@ public class GeneratePlaylistService extends Service {
 			}
 			for (File f : dir.listFiles()) {
 				if (f.isFile()) {
-					String type = getMimeType(f.toURI().toString().trim());
+					String type = getMimeType(f.toURL().toString().trim());
 					if (type != null && type.startsWith("audio")) {
 						Log.d("Media ", f.toURL().toString());
 						if (f.length() > MINUMUM_LENGTH) {
@@ -168,7 +168,7 @@ public class GeneratePlaylistService extends Service {
 		private String getMimeType(String url) {
 			if (url != null) {
 				String type = null;
-				String extension = MimeTypeMap.getFileExtensionFromUrl(url);
+				String extension = url.substring(url.lastIndexOf(".")+1,url.length());
 				if (extension != null) {
 					MimeTypeMap mime = MimeTypeMap.getSingleton();
 					type = mime.getMimeTypeFromExtension(extension);
