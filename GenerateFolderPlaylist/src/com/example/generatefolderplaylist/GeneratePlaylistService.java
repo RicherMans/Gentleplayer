@@ -84,6 +84,7 @@ public class GeneratePlaylistService extends Service {
 
 		}
 	}
+	
 	private void stop(){
 		this.stopSelf();
 	}
@@ -102,6 +103,14 @@ public class GeneratePlaylistService extends Service {
 				stop();
 			}
 		}
+		
+
+		@Override
+		protected void onCancelled() {
+			super.onCancelled();
+			stop();
+		}
+
 
 		@Override
 		protected HashMap<String, List<String>> doInBackground(String... params) {
@@ -115,7 +124,7 @@ public class GeneratePlaylistService extends Service {
 					pathstomp = searchNodesRec(root, pathstomp);
 					return pathstomp;
 				} catch (MalformedURLException e) {
-					e.printStackTrace();
+					stop();
 				}
 			}
 			return null;

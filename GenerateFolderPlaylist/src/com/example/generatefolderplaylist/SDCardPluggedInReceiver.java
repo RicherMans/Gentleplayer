@@ -11,7 +11,6 @@ public class SDCardPluggedInReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		Log.d("Media", intent.getAction());
-		Uri filep = (intent.getData());
 		Intent i = new Intent(
 				"com.example.generatefolderplaylist.GeneratePlaylistService");
 		i.setClass(context, GeneratePlaylistService.class);
