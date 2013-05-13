@@ -67,21 +67,14 @@ public class GeneratePlaylistService extends Service {
 			} catch (IOException e) {
 				e.printStackTrace();
 			} finally {
+				//java 7 pro
 				if (out != null)
 					try {
 						out.close();
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 			}
-			try {
-				if (out != null)
-					out.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
 		}
 	}
 	
