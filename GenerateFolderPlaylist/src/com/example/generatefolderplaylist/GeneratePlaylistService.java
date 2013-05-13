@@ -28,7 +28,9 @@ public class GeneratePlaylistService extends Service {
 	final static long MINUMUM_LENGTH = 1024 * 1024;
 	private static Object sync = new Object();
 	// Root path, which will be searched
+	private HashMap<String,Long> modPlayL;
 	private String pathToMedia = null;
+	private HashMap<String,Long> modDate;
 	final static String PLAYLISTPATH = Environment
 			.getExternalStorageDirectory().getAbsolutePath() + "/Playlists/";
 
@@ -176,6 +178,7 @@ public class GeneratePlaylistService extends Service {
 	@Override
 	public synchronized void onStart(Intent intent, int startId) {
 		synchronized (sync) {
+			modDate = new HashMap<String, Long>();
 			new SearchTreeJob().execute(Environment
 					.getExternalStorageDirectory().getAbsolutePath());
 		} 
