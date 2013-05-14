@@ -16,8 +16,4 @@ public class MainStartActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		finish();
 	}
-	
-	
-	
-
 }
