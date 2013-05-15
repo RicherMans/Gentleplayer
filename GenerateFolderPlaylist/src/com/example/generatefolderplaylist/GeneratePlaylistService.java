@@ -25,6 +25,7 @@ public class GeneratePlaylistService extends Service {
 
 	final static long MINUMUM_LENGTH = 1024 * 1024;
 	private static Object sync = new Object();
+	//I didnt do that she was legal
 
 	// Root path, which will be searched
 	final static String PLAYLISTPATH = Environment
