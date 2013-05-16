@@ -10,12 +10,14 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 
 import android.app.Service;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
+import android.provider.MediaStore.Audio.Artists;
 import android.provider.MediaStore.Audio.Playlists;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -24,12 +26,11 @@ public class GeneratePlaylistService extends Service {
 
 	final static long MINUMUM_LENGTH = 1024 * 1024;
 	private static Object sync = new Object();
-	
+
 	// Root path, which will be searched
 	final static String PLAYLISTPATH = Environment
 			.getExternalStorageDirectory().getAbsolutePath() + "/Playlists/";
-	
-	
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		return super.onStartCommand(intent, flags, startId);
@@ -84,20 +85,33 @@ public class GeneratePlaylistService extends Service {
 		@Override
 		protected void onPostExecute(HashMap<String, ArrayDeque<String>> result) {
 			super.onPostExecute(result);
+			Cursor cur = getContentResolver().query(
+					MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, null,
+					null, null, null);
+			ArrayDeque<String> currentPlaylists = new ArrayDeque<String>(30);
+			while (cur.moveToNext()) {
+				currentPlaylists.add(cur.getString(cur
+						.getColumnIndex(Playlists.NAME)));
+			}
 			if (result != null) {
 				for (String key : result.keySet()) {
-//					ContentValues values = new ContentValues();
+					ContentValues values = new ContentValues();
 					Log.d("Key V", key + result.get(key));
 					String tmpA[] = key.split("/");
 					String playlistName = tmpA[tmpA.length - 1];
-					Log.d("Media V",playlistName);
-//					values.put(Playlists.NAME, playlistName);
+					Log.d("Media V", playlistName);
+//					values.put(Artists.ARTIST, "Peter lang");
+					//TODO: Add crrect Values and insert into Content Provider
 					writeFile(playlistName, result.get(key));
-					Cursor cur =getContentResolver().query(
-							MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-							null,Playlists.NAME,null,null);
-					while(cur.moveToNext()){
-						System.out.println(cur.getString(cur.getColumnIndex(Playlists.NAME)));
+					if (currentPlaylists.contains(playlistName)) {
+						getContentResolver()
+								.update(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+										values, Playlists.NAME + " = ? ",
+										new String[] { playlistName });
+					} else {
+						getContentResolver()
+								.insert(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+										values);
 					}
 				}
 				// TODO: Use contentresolver to manually add the Playlist files
