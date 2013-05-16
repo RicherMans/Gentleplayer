@@ -10,9 +10,8 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 
 import android.app.Service;
-import android.content.ContentValues;
 import android.content.Intent;
-import android.net.Uri;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.IBinder;
@@ -94,9 +93,12 @@ public class GeneratePlaylistService extends Service {
 					Log.d("Media V",playlistName);
 //					values.put(Playlists.NAME, playlistName);
 					writeFile(playlistName, result.get(key));
-//					getContentResolver().update(
-//							MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-//							values,null,null);
+					Cursor cur =getContentResolver().query(
+							MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+							null,Playlists.NAME,null,null);
+					while(cur.moveToNext()){
+						System.out.println(cur.getString(cur.getColumnIndex(Playlists.NAME)));
+					}
 				}
 				// TODO: Use contentresolver to manually add the Playlist files
 				// into Androids DB
