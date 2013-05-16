@@ -1,4 +1,4 @@
-package com.example.generatefolderplaylist;
+package de.richermans.generatefolderplaylist;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

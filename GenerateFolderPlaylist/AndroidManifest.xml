@@ -12,7 +12,7 @@
         android:icon="@drawable/music_ico"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-        <activity android:name="com.example.generatefolderplaylist.MainStartActivity"
+        <activity android:name="de.richermans.generatefolderplaylist.MainStartActivity"
             android:label="@string/servicelabel"
              >
             <intent-filter>
@@ -22,12 +22,12 @@
         </activity>
 
         <service
-            android:name="com.example.generatefolderplaylist.GeneratePlaylistService"
+            android:name="de.richermans.generatefolderplaylist.GeneratePlaylistService"
             android:icon="@drawable/ic_launcher"
             android:label="@string/servicelabel" >
             
         </service>
-        <receiver android:name="com.example.generatefolderplaylist.SDCardPluggedInReceiver">
+        <receiver android:name="de.richermans.generatefolderplaylist.SDCardPluggedInReceiver">
             <intent-filter >
                 <action android:name="android.intent.action.MEDIA_SCANNER_STARTED"/>
                 <data android:scheme="file"/>

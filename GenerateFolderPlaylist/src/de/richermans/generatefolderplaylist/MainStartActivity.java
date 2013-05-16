@@ -1,4 +1,4 @@
-package com.example.generatefolderplaylist;
+package de.richermans.generatefolderplaylist;
 
 import android.app.Activity;
 import android.app.ActivityManager;

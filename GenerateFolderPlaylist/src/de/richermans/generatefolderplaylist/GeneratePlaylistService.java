@@ -1,4 +1,4 @@
-package com.example.generatefolderplaylist;
+package de.richermans.generatefolderplaylist;
 
 import java.io.BufferedWriter;
 import java.io.File;
