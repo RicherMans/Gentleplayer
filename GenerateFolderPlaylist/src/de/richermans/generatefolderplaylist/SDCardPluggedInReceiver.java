@@ -15,9 +15,5 @@ public class SDCardPluggedInReceiver extends BroadcastReceiver {
 				"com.example.generatefolderplaylist.GeneratePlaylistService");
 		i.setClass(context, GeneratePlaylistService.class);
 		context.startService(i);
-		// if(pathToMedia == null)
-		// new SearchTreeJob().execute(filep.getEncodedPath());
-		// else
-		// new SearchTreeJob().execute(pathToMedia);
 	}
 }

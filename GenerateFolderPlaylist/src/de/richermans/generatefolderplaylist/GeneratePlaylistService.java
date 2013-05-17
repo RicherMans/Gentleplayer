@@ -10,14 +10,16 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 
 import android.app.Service;
+import android.content.ContentProviderClient;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
-import android.provider.MediaStore.Audio.Artists;
 import android.provider.MediaStore.Audio.Playlists;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -26,6 +28,7 @@ public class GeneratePlaylistService extends Service {
 
 	final static long MINUMUM_LENGTH = 1024 * 1024;
 	private static Object sync = new Object();
+	private static final String TAG = "GeneratePlaylistService";
 
 	// Root path, which will be searched
 	final static String PLAYLISTPATH = Environment
@@ -41,7 +44,8 @@ public class GeneratePlaylistService extends Service {
 		super.onCreate();
 	}
 
-	private void writeFile(String playlistName, ArrayDeque<String> list) {
+	private void writeFile(String playlistName, ArrayDeque<String> list,
+			HashMap<String, String> currentPlaylists) {
 		File playlistPa = new File(PLAYLISTPATH);
 		if (!playlistPa.exists()) {
 			playlistPa.mkdir();
@@ -52,17 +56,31 @@ public class GeneratePlaylistService extends Service {
 			if (f.exists()) {
 				f.delete();
 			}
+			ContentValues values = new ContentValues();
 			f.createNewFile();
 			out = new BufferedWriter(new FileWriter(f));
 			StringBuffer m3UDat = new StringBuffer();
+//			Uri insTrackToPl = Playlists.Members.getContentUri("external",
+//					Long.parseLong(currentPlaylists.get(playlistName)));
 			for (String song : list) {
 				m3UDat.append(song);
+//				values.put(Playlists.Members.DATA, song);
+//				getContentResolver().update(insTrackToPl, values,Playlists.Members.DATA + "= ?", new String[]{"Peter Long Penis s"});
 				m3UDat.append("\n");
 			}
 			out.write(m3UDat.toString());
+			if (currentPlaylists.containsKey(playlistName)) {
+				//Update
+			} else {
+				getContentResolver()
+				.insert(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+						values);
+			}
 		} catch (FileNotFoundException e) {
+			stop();
 			e.printStackTrace();
 		} catch (IOException e) {
+			stop();
 			e.printStackTrace();
 		} finally {
 			// java 7 pro
@@ -88,31 +106,22 @@ public class GeneratePlaylistService extends Service {
 			Cursor cur = getContentResolver().query(
 					MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, null,
 					null, null, null);
-			ArrayDeque<String> currentPlaylists = new ArrayDeque<String>(30);
+			HashMap<String, String> currentPlaylists = new HashMap<String, String>(
+					30);
 			while (cur.moveToNext()) {
-				currentPlaylists.add(cur.getString(cur
-						.getColumnIndex(Playlists.NAME)));
+				currentPlaylists.put(
+						cur.getString(cur.getColumnIndex(Playlists.NAME)),
+						cur.getString(cur.getColumnIndex(Playlists._ID)));
+
 			}
 			if (result != null) {
 				for (String key : result.keySet()) {
-					ContentValues values = new ContentValues();
 					Log.d("Key V", key + result.get(key));
 					String tmpA[] = key.split("/");
 					String playlistName = tmpA[tmpA.length - 1];
 					Log.d("Media V", playlistName);
-//					values.put(Artists.ARTIST, "Peter lang");
-					//TODO: Add crrect Values and insert into Content Provider
-					writeFile(playlistName, result.get(key));
-					if (currentPlaylists.contains(playlistName)) {
-						getContentResolver()
-								.update(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-										values, Playlists.NAME + " = ? ",
-										new String[] { playlistName });
-					} else {
-						getContentResolver()
-								.insert(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-										values);
-					}
+					writeFile(playlistName, result.get(key), currentPlaylists);
+
 				}
 				// TODO: Use contentresolver to manually add the Playlist files
 				// into Androids DB
@@ -132,7 +141,6 @@ public class GeneratePlaylistService extends Service {
 			if (params.length > 1) {
 				return null;
 			}
-
 			File root = new File(params[0]);
 			if (root != null) {
 				HashMap<String, ArrayDeque<String>> pathstomp = new HashMap<String, ArrayDeque<String>>();
