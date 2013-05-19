@@ -22,6 +22,7 @@ import android.provider.MediaStore.Audio.Playlists;
 import android.provider.MediaStore.Audio.Playlists.Members;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
+import android.widget.Toast;
 
 public class GeneratePlaylistService extends Service {
 
@@ -227,6 +228,7 @@ public class GeneratePlaylistService extends Service {
 
 	@Override
 	public synchronized void onStart(Intent intent, int startId) {
+		Toast.makeText(this, getResources().getString(R.string.app_started), Toast.LENGTH_SHORT).show();
 		new SearchTreeJob().execute(Environment.getExternalStorageDirectory().getAbsolutePath());
 		super.onStart(intent, startId);
 	}
