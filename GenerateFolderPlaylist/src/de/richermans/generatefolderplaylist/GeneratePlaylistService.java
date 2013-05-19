@@ -10,8 +10,6 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 
 import android.app.Service;
-import android.content.ContentProviderClient;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
@@ -21,18 +19,18 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio.Playlists;
+import android.provider.MediaStore.Audio.Playlists.Members;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
 public class GeneratePlaylistService extends Service {
 
-	final static long MINUMUM_LENGTH = 1024 * 1024;
+	private final static long MINUMUM_LENGTH = 1024 * 1024;
 	private static Object sync = new Object();
 	private static final String TAG = "GeneratePlaylistService";
 
 	// Root path, which will be searched
-	final static String PLAYLISTPATH = Environment
-			.getExternalStorageDirectory().getAbsolutePath() + "/Playlists/";
+	final static String PLAYLISTPATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Playlists/";
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -44,8 +42,7 @@ public class GeneratePlaylistService extends Service {
 		super.onCreate();
 	}
 
-	private void writeFile(String playlistName, ArrayDeque<String> list,
-			HashMap<String, String> currentPlaylists) {
+	private void writeFile(String playlistName, ArrayDeque<String> list, HashMap<String, Long> currentPlaylists) {
 		File playlistPa = new File(PLAYLISTPATH);
 		if (!playlistPa.exists()) {
 			playlistPa.mkdir();
@@ -56,26 +53,42 @@ public class GeneratePlaylistService extends Service {
 			if (f.exists()) {
 				f.delete();
 			}
-			ContentValues values = new ContentValues();
 			f.createNewFile();
 			out = new BufferedWriter(new FileWriter(f));
 			StringBuffer m3UDat = new StringBuffer();
-//			Uri insTrackToPl = Playlists.Members.getContentUri("external",
-//					Long.parseLong(currentPlaylists.get(playlistName)));
+			Long playlistId = currentPlaylists.get(playlistName);
+			Uri insTrackToPl = null;
+			if (playlistId != null){
+				//playlist is already existing in database
+				insTrackToPl = Playlists.Members.getContentUri("external", playlistId);
+			}else{
+				// Playlist does not exist in the current Database, so add it
+				ContentValues cplayListName = new ContentValues();
+				cplayListName.put(Playlists.NAME, playlistName);
+				getContentResolver().insert(Playlists.EXTERNAL_CONTENT_URI,cplayListName);
+			}
 			for (String song : list) {
 				m3UDat.append(song);
-//				values.put(Playlists.Members.DATA, song);
-//				getContentResolver().update(insTrackToPl, values,Playlists.Members.DATA + "= ?", new String[]{"Peter Long Penis s"});
+				// "update playlist"
+				if (insTrackToPl != null) {
+					//some songs do have special characters which lead to sql errors
+					song = song.replaceAll("[-+.^:,']", "");
+					Cursor isDataIns = getContentResolver().query(insTrackToPl, null,
+							Members.DATA + " = '" + song + "'", null, null);
+					//Possible that Cursor has 0 elements and will throw exception if moveToFirst is called
+					if (isDataIns.getCount() > 0) {
+						isDataIns.moveToFirst();
+						int audioId = isDataIns.getInt(isDataIns.getColumnIndex(Members.AUDIO_ID));
+						if (audioId <= 0) {
+							addToPlaylist(audioId, playlistId);
+						}
+					}
+					isDataIns.close();
+				}
 				m3UDat.append("\n");
 			}
 			out.write(m3UDat.toString());
-			if (currentPlaylists.containsKey(playlistName)) {
-				//Update
-			} else {
-				getContentResolver()
-				.insert(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-						values);
-			}
+
 		} catch (FileNotFoundException e) {
 			stop();
 			e.printStackTrace();
@@ -93,27 +106,40 @@ public class GeneratePlaylistService extends Service {
 		}
 	}
 
+	private void addToPlaylist(int audioId, long playlistId) {
+		String[] cols = new String[] { "count(*)" };
+		Uri uri = MediaStore.Audio.Playlists.Members.getContentUri("external", playlistId);
+		Cursor cur = getContentResolver().query(uri, cols, null, null, null);
+		if (cur.getCount() > 0) {
+			cur.moveToFirst();
+			final int base = cur.getInt(0);
+			cur.close();
+			ContentValues values = new ContentValues();
+			values.put(MediaStore.Audio.Playlists.Members.PLAY_ORDER, Integer.valueOf(base + audioId));
+			values.put(MediaStore.Audio.Playlists.Members.AUDIO_ID, audioId);
+			getContentResolver().insert(uri, values);
+		}
+	}
+
 	private void stop() {
 		this.stopSelf();
 	}
 
-	private class SearchTreeJob
-			extends
-			AsyncTask<String, ArrayDeque<String>, HashMap<String, ArrayDeque<String>>> {
+	private class SearchTreeJob extends AsyncTask<String, ArrayDeque<String>, HashMap<String, ArrayDeque<String>>> {
 		@Override
 		protected void onPostExecute(HashMap<String, ArrayDeque<String>> result) {
 			super.onPostExecute(result);
-			Cursor cur = getContentResolver().query(
-					MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, null,
-					null, null, null);
-			HashMap<String, String> currentPlaylists = new HashMap<String, String>(
-					30);
-			while (cur.moveToNext()) {
-				currentPlaylists.put(
-						cur.getString(cur.getColumnIndex(Playlists.NAME)),
-						cur.getString(cur.getColumnIndex(Playlists._ID)));
+			Cursor cur = getContentResolver().query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, null, null, null,
+					null);
+			HashMap<String, Long> currentPlaylists = new HashMap<String, Long>(30);
+			if (cur != null) {
+				while (cur.moveToNext()) {
+					currentPlaylists.put(cur.getString(cur.getColumnIndex(Playlists.NAME)),
+							cur.getLong(cur.getColumnIndex(Playlists._ID)));
 
+				}
 			}
+			cur.close();
 			if (result != null) {
 				for (String key : result.keySet()) {
 					Log.d("Key V", key + result.get(key));
@@ -121,7 +147,6 @@ public class GeneratePlaylistService extends Service {
 					String playlistName = tmpA[tmpA.length - 1];
 					Log.d("Media V", playlistName);
 					writeFile(playlistName, result.get(key), currentPlaylists);
-
 				}
 				// TODO: Use contentresolver to manually add the Playlist files
 				// into Androids DB
@@ -136,26 +161,26 @@ public class GeneratePlaylistService extends Service {
 		}
 
 		@Override
-		protected HashMap<String, ArrayDeque<String>> doInBackground(
-				String... params) {
-			if (params.length > 1) {
-				return null;
-			}
-			File root = new File(params[0]);
-			if (root != null) {
-				HashMap<String, ArrayDeque<String>> pathstomp = new HashMap<String, ArrayDeque<String>>();
-				try {
-					pathstomp = searchNodesRec(root, pathstomp);
-					return pathstomp;
-				} catch (MalformedURLException e) {
-					stop();
+		protected HashMap<String, ArrayDeque<String>> doInBackground(String... params) {
+			synchronized (sync) {
+				if (params.length > 1) {
+					return null;
+				}
+				File root = new File(params[0]);
+				if (root != null) {
+					HashMap<String, ArrayDeque<String>> pathstomp = new HashMap<String, ArrayDeque<String>>();
+					try {
+						pathstomp = searchNodesRec(root, pathstomp);
+						return pathstomp;
+					} catch (MalformedURLException e) {
+						stop();
+					}
 				}
 			}
 			return null;
 		}
 
-		private HashMap<String, ArrayDeque<String>> searchNodesRec(File dir,
-				HashMap<String, ArrayDeque<String>> paths)
+		private HashMap<String, ArrayDeque<String>> searchNodesRec(File dir, HashMap<String, ArrayDeque<String>> paths)
 				throws MalformedURLException {
 			if (dir == null) {
 				return paths;
@@ -188,8 +213,7 @@ public class GeneratePlaylistService extends Service {
 		private String getMimeType(String url) {
 			if (url != null) {
 				String type = null;
-				String extension = url.substring(url.lastIndexOf(".") + 1,
-						url.length());
+				String extension = url.substring(url.lastIndexOf(".") + 1, url.length());
 				if (extension != null) {
 					MimeTypeMap mime = MimeTypeMap.getSingleton();
 					type = mime.getMimeTypeFromExtension(extension);
@@ -203,10 +227,7 @@ public class GeneratePlaylistService extends Service {
 
 	@Override
 	public synchronized void onStart(Intent intent, int startId) {
-		synchronized (sync) {
-			new SearchTreeJob().execute(Environment
-					.getExternalStorageDirectory().getAbsolutePath());
-		}
+		new SearchTreeJob().execute(Environment.getExternalStorageDirectory().getAbsolutePath());
 		super.onStart(intent, startId);
 	}
 

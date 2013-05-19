@@ -11,7 +11,7 @@
     <application
         android:icon="@drawable/music_ico"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme" android:debuggable="false">
         <activity android:name="de.richermans.generatefolderplaylist.MainStartActivity"
             android:label="@string/servicelabel"
              >

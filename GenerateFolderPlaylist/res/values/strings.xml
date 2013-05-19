@@ -2,5 +2,6 @@
 
     <string name="app_name">GenerateFolderPlaylist</string>
     <string name="servicelabel">Generate Playlist</string>
+    <string name="activated">Playlist Generator Activated</string>
 
 </resources>
