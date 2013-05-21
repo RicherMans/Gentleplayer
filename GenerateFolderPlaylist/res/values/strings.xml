@@ -1,8 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">GenerateFolderPlaylist</string>
-    <string name="servicelabel">Generate Playlist</string>
-    <string name="activated">Playlist Generator Activated</string>
-    <string name="app_started">App started</string>
-
-</resources>
+    <string name="servicelabel">GenerateFolderPlaylist</string>
+    <string name="app_started">Playlist Generator started</string>
+    <string name="activated">Activated</string>
+    <string name="start_scan_text">Start scan</string>
+    <string name="set_fsize_text">Set minimum file size for your playlist (?)</string>
+    <string name="choose_directory_text">From where do you want GFP to start a scan?</string>
+    </resources>

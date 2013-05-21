@@ -28,7 +28,7 @@ public class GeneratePlaylistService extends Service {
 
 	private final static long MINUMUM_LENGTH = 1024 * 1024;
 	private static Object sync = new Object();
-	private static final String TAG = "GeneratePlaylistService";
+	private final static String TAG = "GeneratePlaylistService";
 
 	// Root path, which will be searched
 	final static String PLAYLISTPATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Playlists/";
