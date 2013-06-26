@@ -27,10 +27,11 @@ public class MainStartActivity extends Activity {
 		//Just for debugging purpose ... isnt called when debuggale is set to false
 		boolean isDebuggable =  ( 0 != ( getApplicationInfo().flags &= ApplicationInfo.FLAG_DEBUGGABLE ) );
 		if(isDebuggable){
-			wipeAllPlaylists();
+//			wipeAllPlaylists();
 			debugTests();
+		}else{
+			finish();
 		}
-		finish();
 	}
 	
 	private void wipeAllPlaylists(){
@@ -43,6 +44,7 @@ public class MainStartActivity extends Activity {
 				null, null, null);
 		HashMap<String, String> currentPlaylists = new HashMap<String, String>(
 					30);
+		cur.moveToFirst();
 			while (cur.moveToNext()) {
 				currentPlaylists.put(
 						cur.getString(cur.getColumnIndex(Playlists.NAME)),
@@ -53,7 +55,7 @@ public class MainStartActivity extends Activity {
 			Log.d("Playlist",plN.getKey() + "  " +plN.getValue() );
 			Uri playlist = Playlists.Members.getContentUri("external",
 					Long.parseLong(plN.getValue()));
-			Cursor curs = getContentResolver().query(playlist, null, Playlists.DATA +" = " + "'/mnt/sdcard/media/audio/music/Tom Hangs ft Shermanology - Blessed (Avicii Edit)-www.manomuzika.nkk.lt.mp3'", null, null);
+			Cursor curs = getContentResolver().query(playlist,new String[]{Members.DATA}, null, null, null);
 			while(curs.moveToNext()){
 				ContentValues val = new ContentValues();
 				String track = curs.getString(curs.getColumnIndex(Playlists.Members.TRACK));
@@ -73,20 +75,6 @@ public class MainStartActivity extends Activity {
 		}
 		
 	}
-	public void addToPlaylist(int audioId,long playlistId) {
-        String[] cols = new String[] {
-                "count(*)"
-        };
-        Uri uri = MediaStore.Audio.Playlists.Members.getContentUri("external", playlistId);
-        Cursor cur = getContentResolver().query(uri, cols, null, null, null);
-        cur.moveToFirst();
-        final int base = cur.getInt(0);
-        cur.close();
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Audio.Playlists.Members.PLAY_ORDER, Integer.valueOf(base + audioId));
-        values.put(MediaStore.Audio.Playlists.Members.AUDIO_ID, audioId);
-        getContentResolver().insert(uri, values);
-    }
 
 
 }

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.concurrent.Semaphore;
 
 import android.app.Service;
 import android.content.ContentValues;
@@ -27,8 +28,8 @@ import android.widget.Toast;
 public class GeneratePlaylistService extends Service {
 
 	private final static long MINUMUM_LENGTH = 1024 * 1024;
-	private static Object sync = new Object();
 	private final static String TAG = "GeneratePlaylistService";
+	private final static Semaphore sema = new Semaphore(1);
 
 	// Root path, which will be searched
 	final static String PLAYLISTPATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Playlists/";
@@ -59,32 +60,35 @@ public class GeneratePlaylistService extends Service {
 			StringBuffer m3UDat = new StringBuffer();
 			Long playlistId = currentPlaylists.get(playlistName);
 			Uri insTrackToPl = null;
-			if (playlistId != null){
-				//playlist is already existing in database
+			if (playlistId != null) {
+				// playlist is already existing in database
 				insTrackToPl = Playlists.Members.getContentUri("external", playlistId);
-			}else{
+			} else {
 				// Playlist does not exist in the current Database, so add it
 				ContentValues cplayListName = new ContentValues();
 				cplayListName.put(Playlists.NAME, playlistName);
-				getContentResolver().insert(Playlists.EXTERNAL_CONTENT_URI,cplayListName);
+				getContentResolver().insert(Playlists.EXTERNAL_CONTENT_URI, cplayListName);
 			}
 			for (String song : list) {
 				m3UDat.append(song);
 				// "update playlist"
 				if (insTrackToPl != null) {
-					//some songs do have special characters which lead to sql errors
+					// some songs do have special characters which lead to sql
+					// errors
 					song = song.replaceAll("[-+.^:,']", "");
-					Cursor isDataIns = getContentResolver().query(insTrackToPl, null,
+					Cursor isTrackAlreadyInserted = getContentResolver().query(insTrackToPl, null,
 							Members.DATA + " = '" + song + "'", null, null);
-					//Possible that Cursor has 0 elements and will throw exception if moveToFirst is called
-					if (isDataIns.getCount() > 0) {
-						isDataIns.moveToFirst();
-						int audioId = isDataIns.getInt(isDataIns.getColumnIndex(Members.AUDIO_ID));
+					// Possible that Cursor has 0 elements and will throw
+					// exception if moveToFirst is called
+					if (isTrackAlreadyInserted.getCount() > 0) {
+						isTrackAlreadyInserted.moveToFirst();
+						int audioId = isTrackAlreadyInserted.getInt(isTrackAlreadyInserted
+								.getColumnIndex(Members.AUDIO_ID));
 						if (audioId <= 0) {
 							addToPlaylist(audioId, playlistId);
 						}
 					}
-					isDataIns.close();
+					isTrackAlreadyInserted.close();
 				}
 				m3UDat.append("\n");
 			}
@@ -92,17 +96,15 @@ public class GeneratePlaylistService extends Service {
 
 		} catch (FileNotFoundException e) {
 			stop();
-			e.printStackTrace();
 		} catch (IOException e) {
 			stop();
-			e.printStackTrace();
 		} finally {
 			// java 7 pro
 			if (out != null)
 				try {
 					out.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					Log.e(TAG, "Critical Java 7 pro error");
 				}
 		}
 	}
@@ -151,6 +153,7 @@ public class GeneratePlaylistService extends Service {
 				}
 				// TODO: Use contentresolver to manually add the Playlist files
 				// into Androids DB
+				sema.release();
 				stop();
 			}
 		}
@@ -163,19 +166,22 @@ public class GeneratePlaylistService extends Service {
 
 		@Override
 		protected HashMap<String, ArrayDeque<String>> doInBackground(String... params) {
-			synchronized (sync) {
-				if (params.length > 1) {
-					return null;
-				}
-				File root = new File(params[0]);
-				if (root != null) {
-					HashMap<String, ArrayDeque<String>> pathstomp = new HashMap<String, ArrayDeque<String>>();
-					try {
-						pathstomp = searchNodesRec(root, pathstomp);
-						return pathstomp;
-					} catch (MalformedURLException e) {
-						stop();
-					}
+			if (params.length > 1) {
+				return null;
+			}
+			try {
+				sema.acquire();
+			} catch (InterruptedException e1) {
+				Log.e(TAG, "Couldnt acquire sema");
+			}
+			File root = new File(params[0]);
+			if (root != null) {
+				HashMap<String, ArrayDeque<String>> pathstomp = new HashMap<String, ArrayDeque<String>>();
+				try {
+					pathstomp = searchNodesRec(root, pathstomp);
+					return pathstomp;
+				} catch (MalformedURLException e) {
+					stop();
 				}
 			}
 			return null;
@@ -227,7 +233,7 @@ public class GeneratePlaylistService extends Service {
 	}
 
 	@Override
-	public synchronized void onStart(Intent intent, int startId) {
+	public void onStart(Intent intent, int startId) {
 		Toast.makeText(this, getResources().getString(R.string.app_started), Toast.LENGTH_SHORT).show();
 		new SearchTreeJob().execute(Environment.getExternalStorageDirectory().getAbsolutePath());
 		super.onStart(intent, startId);
