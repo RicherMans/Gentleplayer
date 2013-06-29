@@ -1,10 +1,6 @@
 package de.richermans.generatefolderplaylist;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -32,7 +28,9 @@ public class GeneratePlaylistService extends Service {
 	private final static Semaphore sema = new Semaphore(1);
 
 	// Root path, which will be searched
-	final static String PLAYLISTPATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Playlists/";
+	// final static String PLAYLISTPATH =
+	// Environment.getExternalStorageDirectory().getAbsolutePath() +
+	// "/Playlists/";
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -45,68 +43,71 @@ public class GeneratePlaylistService extends Service {
 	}
 
 	private void writeFile(String playlistName, ArrayDeque<String> list, HashMap<String, Long> currentPlaylists) {
-		File playlistPa = new File(PLAYLISTPATH);
-		if (!playlistPa.exists()) {
-			playlistPa.mkdir();
+		// File playlistPa = new File(PLAYLISTPATH);
+		// if (!playlistPa.exists()) {
+		// playlistPa.mkdir();
+		// }
+		// File f = new File(PLAYLISTPATH + playlistName + ".m3u");
+//		BufferedWriter out = null;
+		// if (f.exists()) {
+		// f.delete();
+		// }
+		// f.createNewFile();
+		// out = new BufferedWriter(new FileWriter(f));
+		StringBuffer m3UDat = new StringBuffer();
+		// does this playlist already exist?
+		Long playlistId = currentPlaylists.get(playlistName);
+		Uri insTrackToPl = null;
+		if (playlistId != null) {
+			// playlist is already existing in database
+			insTrackToPl = Playlists.Members.getContentUri("external", playlistId);
+		} else {
+			// Playlist does not exist in the current Database, so add it
+			ContentValues cplayListName = new ContentValues();
+			cplayListName.put(Playlists.NAME, playlistName);
+			getContentResolver().insert(Playlists.EXTERNAL_CONTENT_URI, cplayListName);
+			// get the id of the inseted playlist
+			Cursor selectID = getContentResolver().query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+					new String[] { Playlists._ID }, Playlists.NAME + " = '" + playlistName + "'", null, null);
+			// Just one row will be fetched
+			selectID.moveToFirst();
+			long tmpId = selectID.getLong(selectID.getColumnIndex(Playlists._ID));
+			// get the content Uri of that playlist
+			insTrackToPl = Playlists.Members.getContentUri("external", tmpId);
+			// set the id for further editing
+			playlistId = tmpId;
 		}
-		File f = new File(PLAYLISTPATH + playlistName + ".m3u");
-		BufferedWriter out = null;
-		try {
-			if (f.exists()) {
-				f.delete();
-			}
-			f.createNewFile();
-			out = new BufferedWriter(new FileWriter(f));
-			StringBuffer m3UDat = new StringBuffer();
-			Long playlistId = currentPlaylists.get(playlistName);
-			Uri insTrackToPl = null;
-			if (playlistId != null) {
-				// playlist is already existing in database
-				insTrackToPl = Playlists.Members.getContentUri("external", playlistId);
-			} else {
-				// Playlist does not exist in the current Database, so add it
-				ContentValues cplayListName = new ContentValues();
-				cplayListName.put(Playlists.NAME, playlistName);
-				getContentResolver().insert(Playlists.EXTERNAL_CONTENT_URI, cplayListName);
-			}
-			for (String song : list) {
-				m3UDat.append(song);
-				// "update playlist"
-				if (insTrackToPl != null) {
-					// some songs do have special characters which lead to sql
-					// errors
-					song = song.replaceAll("[-+.^:,']", "");
-					Cursor isTrackAlreadyInserted = getContentResolver().query(insTrackToPl, null,
-							Members.DATA + " = '" + song + "'", null, null);
-					// Possible that Cursor has 0 elements and will throw
-					// exception if moveToFirst is called
-					if (isTrackAlreadyInserted.getCount() > 0) {
-						isTrackAlreadyInserted.moveToFirst();
-						int audioId = isTrackAlreadyInserted.getInt(isTrackAlreadyInserted
-								.getColumnIndex(Members.AUDIO_ID));
-						if (audioId <= 0) {
-							addToPlaylist(audioId, playlistId);
-						}
-					}
-					isTrackAlreadyInserted.close();
-				}
-				m3UDat.append("\n");
-			}
-			out.write(m3UDat.toString());
 
-		} catch (FileNotFoundException e) {
-			stop();
-		} catch (IOException e) {
-			stop();
-		} finally {
-			// java 7 pro
-			if (out != null)
-				try {
-					out.close();
-				} catch (IOException e) {
-					Log.e(TAG, "Critical Java 7 pro error");
+		for (String song : list) {
+			m3UDat.append(song);
+			// some songs do have special characters which lead to sql
+			// errors
+			song = song.replaceAll("['^]", "");
+			Cursor isTrackAlreadyInserted = getContentResolver().query(insTrackToPl, null,
+					Members.DATA + " = '" + song + "'", null, null);
+			// Possible that Cursor has 0 elements and will throw
+			// exception if moveToFirst is called
+			if (isTrackAlreadyInserted.getCount() > 0) {
+				// Update
+			} else {
+				// find the audio id, which is stored by android
+				// dunno how they come up with this and what does generate a
+				// audio id
+				Cursor findAudioId = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+						new String[] { MediaStore.Audio.Media._ID }, MediaStore.Audio.Media.DATA + "= '" + song + "'",
+						null, null);
+				if (findAudioId.getCount() > 0) {
+					findAudioId.moveToFirst();
+					int id = findAudioId.getInt(findAudioId.getColumnIndex(MediaStore.Audio.Media._ID));
+					addToPlaylist(id, playlistId);
 				}
+				findAudioId.close();
+			}
+			isTrackAlreadyInserted.close();
+			m3UDat.append("\n");
 		}
+		// out.write(m3UDat.toString());
+		
 	}
 
 	private void addToPlaylist(int audioId, long playlistId) {
@@ -125,6 +126,7 @@ public class GeneratePlaylistService extends Service {
 	}
 
 	private void stop() {
+		Toast.makeText(this, getResources().getString(R.string.stopped), Toast.LENGTH_SHORT).show();
 		this.stopSelf();
 	}
 
@@ -132,8 +134,8 @@ public class GeneratePlaylistService extends Service {
 		@Override
 		protected void onPostExecute(HashMap<String, ArrayDeque<String>> result) {
 			super.onPostExecute(result);
-			Cursor cur = getContentResolver().query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, null, null, null,
-					null);
+			Cursor cur = getContentResolver().query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+					new String[] { Playlists.NAME, Playlists._ID }, null, null, null);
 			HashMap<String, Long> currentPlaylists = new HashMap<String, Long>(30);
 			if (cur != null) {
 				while (cur.moveToNext()) {
@@ -151,8 +153,6 @@ public class GeneratePlaylistService extends Service {
 					Log.d("Media V", playlistName);
 					writeFile(playlistName, result.get(key), currentPlaylists);
 				}
-				// TODO: Use contentresolver to manually add the Playlist files
-				// into Androids DB
 				sema.release();
 				stop();
 			}

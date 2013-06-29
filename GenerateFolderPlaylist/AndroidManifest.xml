@@ -11,7 +11,7 @@
     <application
         android:icon="@drawable/music_ico"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" android:debuggable="true">
+        android:theme="@style/AppTheme" android:debuggable="false">
         <activity android:name="de.richermans.generatefolderplaylist.MainStartActivity"
             android:label="@string/servicelabel"
              >
@@ -29,7 +29,7 @@
         </service>
         <receiver android:name="de.richermans.generatefolderplaylist.SDCardPluggedInReceiver">
             <intent-filter >
-                <action android:name="android.intent.action.MEDIA_SCANNER_STARTED"/>
+                <action android:name="android.intent.action.MEDIA_SCANNER_FINISHED"/>
                 <data android:scheme="file"/>
             </intent-filter>
             

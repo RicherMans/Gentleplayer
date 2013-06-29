@@ -6,6 +6,7 @@ import java.util.Map;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.database.Cursor;
 import android.net.Uri;
@@ -22,59 +23,58 @@ public class MainStartActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		Toast.makeText(this, getResources().getString(R.string.activated),Toast.LENGTH_SHORT).show();
-		//Just for debugging purpose ... isnt called when debuggale is set to false
-		boolean isDebuggable =  ( 0 != ( getApplicationInfo().flags &= ApplicationInfo.FLAG_DEBUGGABLE ) );
-		if(isDebuggable){
-//			wipeAllPlaylists();
-			debugTests();
-		}else{
+
+		Toast.makeText(this, getResources().getString(R.string.activated), Toast.LENGTH_SHORT).show();
+		// Just for debugging purpose ... isnt called when debuggale is set to
+		// false
+		boolean isDebuggable = (0 != (getApplicationInfo().flags &= ApplicationInfo.FLAG_DEBUGGABLE));
+		if (isDebuggable) {
+//			 wipeAllPlaylists();
+//			debugTests();
+//			 Intent i = new Intent(
+//			 "com.example.generatefolderplaylist.GeneratePlaylistService");
+//			 i.setClass(this, GeneratePlaylistService.class);
+//			 startService(i);
+		} else {
 			finish();
 		}
 	}
-	
-	private void wipeAllPlaylists(){
+
+	private void wipeAllPlaylists() {
 		getContentResolver().delete(Playlists.EXTERNAL_CONTENT_URI, null, null);
 	}
-	
-	private void debugTests(){
-		Cursor cur = getContentResolver().query(
-				MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, null,
-				null, null, null);
-		HashMap<String, String> currentPlaylists = new HashMap<String, String>(
-					30);
-		cur.moveToFirst();
-			while (cur.moveToNext()) {
-				currentPlaylists.put(
-						cur.getString(cur.getColumnIndex(Playlists.NAME)),
-						cur.getString(cur.getColumnIndex(Playlists._ID)));
-			}
-		
-		for(Map.Entry<String,String > plN : currentPlaylists.entrySet()){
-			Log.d("Playlist",plN.getKey() + "  " +plN.getValue() );
-			Uri playlist = Playlists.Members.getContentUri("external",
-					Long.parseLong(plN.getValue()));
-			Cursor curs = getContentResolver().query(playlist,new String[]{Members.DATA}, null, null, null);
-			while(curs.moveToNext()){
-				ContentValues val = new ContentValues();
-				String track = curs.getString(curs.getColumnIndex(Playlists.Members.TRACK));
-				String album = curs.getString(curs.getColumnIndex(Playlists.Members.ALBUM));
-				String audioID = curs.getString(curs.getColumnIndex(Playlists.Members.AUDIO_ID));
-				String artists  = curs.getString(curs.getColumnIndex(Playlists.Members.ARTIST));
-				String disp = curs.getString(curs.getColumnIndex(Playlists.Members.DISPLAY_NAME));
-				String title = curs.getString(curs.getColumnIndex(Playlists.Members.TITLE));
-				String data = curs.getString(curs.getColumnIndex(Playlists.Members.DATA));
-				val.put(Playlists.Members.DATA, "PENIS");
-//				String dateAdd = curs.getString(curs.getColumnIndex(Playlists.Members.DATE_ADDED));
-//				addToPlaylist(Integer.parseInt(audioID),Long.parseLong(plN.getValue()));
-//					
-//				Log.d("Track Artist ... " , track + album  +artists + disp + dateAdd + title);
-			}
-			curs.close();
-		}
-		
-	}
 
+	private void debugTests() {
+		Cursor cur = getContentResolver()
+				.query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, null, null, null, null);
+		HashMap<String, String> currentPlaylists = new HashMap<String, String>(30);
+		cur.moveToFirst();
+		while (cur.moveToNext()) {
+			currentPlaylists.put(cur.getString(cur.getColumnIndex(Playlists.NAME)),
+					cur.getString(cur.getColumnIndex(Playlists._ID)));
+		}
+
+		for (Map.Entry<String, String> plN : currentPlaylists.entrySet()) {
+			Log.d("Playlist", plN.getKey() + "  " + plN.getValue());
+			Uri playlist = Playlists.Members.getContentUri("external", Long.parseLong(plN.getValue()));
+			Uri insTrackToPl;
+			insTrackToPl = Playlists.Members.getContentUri("external", Long.parseLong(plN.getValue()));
+			Cursor curss = getContentResolver().query(insTrackToPl, null, null, null, null);
+			while(curss.moveToNext()){
+				
+				String data = curss.getString(curss.getColumnIndex(Playlists.Members.DATA));
+				String x = curss.getString(curss.getColumnIndex(Playlists.Members.ALBUM));
+				Cursor isTrackAlreadyInserted = getContentResolver().query(insTrackToPl, null,
+						Members.DATA + " = '" + data+ "'", null, null);
+				while(isTrackAlreadyInserted.moveToNext()){
+					String m = isTrackAlreadyInserted.getString(isTrackAlreadyInserted.getColumnIndex(Playlists.Members.DATA));
+				}
+				
+			}
+			
+			
+		}
+
+	}
 
 }
