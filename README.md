@@ -5,9 +5,12 @@ I love the easy and intuitive Android standard music player, but its nearly impo
 So i wrote this little app, which just generates new playlists depending on all folders, which contain one or more audio files.
 
 
-1. Install app.
-2. Start the app once. ( No GUI will appear, just s short message that it is started)
-3. Connect your device to your Computer
-4. Copy your music into the SDCard 
-5. Disconnect from Computer
-6. Voilà , your music is now listed as a playlist in your default android music player
+<h1> Installation</h1>
+
+<ul TYPE="CIRCLE">
+<li>Start the app once. ( No GUI will appear, just s short message that it is started)</li>
+<li>Connect your device to your Computer</li>
+<li>Copy your music into the SDCard </li>
+<li>Disconnect from Computer</li>
+<li>Voilà , your music is now listed as a playlist in your default android music player and other players</li>
+</ul>
