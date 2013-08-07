@@ -1,9 +1,14 @@
-Hey there, this is GentlePlayer.
+<h1>Introduction</h1>
+I hate touching through multiple folders etc. just for playing music. 
+Also I hate to reorganize my music every time, I transfer music onto the device.
+That's why i made this app, which does not play actual music, but generates playlists to use for 
+music players.
 
+
+<h1>What does it?</h1>
 GentlePlayer is a totally simple Playlist generator for your Android device. 
-I love the easy and intuitive Android standard music player, but its nearly impossible to manage multiple folders with it.
-So i wrote this little app, which just generates new playlists depending on all folders, which contain one or more audio files.
 
+Just install it and start it once. Playlists will be created on the fly.
 
 <h1>Usage</h1>
 
