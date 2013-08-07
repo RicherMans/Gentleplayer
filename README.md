@@ -5,7 +5,7 @@ I love the easy and intuitive Android standard music player, but its nearly impo
 So i wrote this little app, which just generates new playlists depending on all folders, which contain one or more audio files.
 
 
-<h1> Installation</h1>
+<h1>Usage</h1>
 
 <ul TYPE="CIRCLE">
 <li>Start the app once. ( No GUI will appear, just s short message that it is started)</li>
