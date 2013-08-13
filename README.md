@@ -1,6 +1,6 @@
 <h1>Introduction</h1>
 I hate touching through multiple folders etc. just for playing music. 
-Also I hate to reorganize my music every time, I transfer music onto the device.
+Also I hate to reorganize my music every time when transferring music onto the device.
 That's why i made this app, which does not play actual music, but generates playlists to use for 
 music players.
 
